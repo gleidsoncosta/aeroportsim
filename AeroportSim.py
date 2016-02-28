@@ -1,20 +1,3 @@
-"""
-Carwash example.
-
-Covers:
-
-- Waiting for other processes
-- Resources: Resource
-
-Scenario:
-  A carwash has a limited number of washing machines and defines
-  a washing processes that takes some (random) time.
-
-  Car processes arrive at the carwash at a random time. If one washing
-  machine is available, they start the washing process and wait for it
-  to finish. If not, they wait until they can use one.
-
-"""
 import random
 from Statistics import Statistics
 import simpy
@@ -23,75 +6,65 @@ import simpy
 RANDOM_SEED = 42
 NUM_GATES = 2  # Number of machines in the carwash
 WAIT_TIME = 5      # Minutes it takes to clean a car
-T_INTER = 7       # Create a car every ~7 minutes
-SIM_TIME = 20     # Simulation time in minutes
+T_INTER = 13       # Create a car every ~7 minutes
+SIM_TIME = 200    # Simulation time in minutes
+
+usage = False
 
 
 class Airport(object):
-    """A carwash has a limited number of machines (``NUM_MACHINES``) to
-    clean cars in parallel.
-
-    Cars have to request one of the machines. When they got one, they
-    can start the washing processes and wait for it to finish (which
-    takes ``washtime`` minutes).
-
-    """
     def __init__(self, env, num_gates, wait_time):
         self.env = env
         self.num_gates = simpy.Resource(env, num_gates)
         self.wait_time = wait_time
+        self.open = False
 
-    def land(self, plane):
-        """The washing processes. It takes a ``car`` processes and tries
-        to clean it."""
+    def leave(self, plane):
         yield self.env.timeout(WAIT_TIME)
-        print("Airport authorizes %s to land" % plane)
+        print("Airport authorizes %s to leave at %d" % (plane, env.now))
 
 
 def plane(env, name, ap):
-    """The car process (each car has a ``name``) arrives at the carwash
-    (``cw``) and requests a cleaning machine.
+    #print("tempo sem locacao: u%d   nu%d    t%d" % (usage_res, non_usage_res, env.now))
 
-    It then starts the washing process, waits for it to finish and
-    leaves to never come back ...
-
-    """
-
-    arrival_time = 0
-    depart_time = 0
-
-    arrival_time = env.now
-    print('%s arrives at the airport at %.2f.' % (name, arrival_time))
+    print('%s arrives at the airport at %.2f.' % (name, env.now))
     with ap.num_gates.request() as request:
         yield request
 
-        print('%s enters the airport at %.2f.' % (name, env.now))
-        yield env.process(ap.land(name))
+        arrival_time = env.now
+        print('%s enters the gate at %.2f.' % (name, arrival_time))
+        yield env.process(ap.leave(name))
+        stats.addCompletions()
+
+        if(ap.num_gates.request == 0):
+            ap.open = True
+        else:
+            ap.open = False
 
         depart_time = env.now
-        print('%s leaves the airport at %.2f.' % (name, depart_time))
-        stats.addCompletions()
-        print("%s delay_time %d" % (name, depart_time - arrival_time))
-        stats.addBusyTime((depart_time - arrival_time))
+        print('%s leaves the gate at %.2f.' % (name, depart_time))
 
 
 def setup(env, num_gates, wait_time, t_inter):
-    """Create a carwash, a number of initial cars and keep creating cars
-    approx. every ``t_inter`` minutes."""
     # Create the airport
     airport = Airport(env, num_gates, wait_time)
-
     # Create 4 initial planes
-    for i in range(4):
+    for i in range(1):
         env.process(plane(env, 'Plane %d' % i, airport))
         stats.addArrivals()
 
+    usage_res = env.now
     # Create more cars while the simulation is running
     while True:
         yield env.timeout(random.randint(t_inter-2, t_inter+2))
         i += 1
         env.process(plane(env, 'Plane %d' % i, airport))
         stats.addArrivals()
+
+        print(airport.num_gates.count)
+        if not airport.open:
+            stats.addBusyTime(env.now - usage_res)
+            usage_res = env.now
 
 stats = Statistics(SIM_TIME)
 
