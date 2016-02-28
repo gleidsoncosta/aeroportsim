@@ -27,4 +27,4 @@ class Statistics(object):
         print("Tempo de Observacao %d" % (self.observation_time))
         print("Numero de Chegadas %d" % self.arrivals_num)
         print("Numero de Saidas %d " % self.completions_num)
-        print("Tempo ocupado %d" % self.busy_time)
+        print("Tempo ocupado %.2f" % self.busy_time)
