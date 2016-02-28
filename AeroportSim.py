@@ -16,7 +16,7 @@ Scenario:
 
 """
 import random
-
+from Statistics import Statistics
 import simpy
 
 
@@ -56,14 +56,23 @@ def plane(env, name, ap):
     leaves to never come back ...
 
     """
-    print('%s arrives at the airport at %.2f.' % (name, env.now))
+
+    arrival_time = 0
+    depart_time = 0
+
+    arrival_time = env.now
+    print('%s arrives at the airport at %.2f.' % (name, arrival_time))
     with ap.num_gates.request() as request:
         yield request
 
         print('%s enters the airport at %.2f.' % (name, env.now))
         yield env.process(ap.land(name))
 
-        print('%s leaves the airport at %.2f.' % (name, env.now))
+        depart_time = env.now
+        print('%s leaves the airport at %.2f.' % (name, depart_time))
+        stats.addCompletions()
+        print("%s delay_time %d" % (name, depart_time - arrival_time))
+        stats.addBusyTime((depart_time - arrival_time))
 
 
 def setup(env, num_gates, wait_time, t_inter):
@@ -75,13 +84,16 @@ def setup(env, num_gates, wait_time, t_inter):
     # Create 4 initial planes
     for i in range(4):
         env.process(plane(env, 'Plane %d' % i, airport))
+        stats.addArrivals()
 
     # Create more cars while the simulation is running
     while True:
         yield env.timeout(random.randint(t_inter-2, t_inter+2))
         i += 1
         env.process(plane(env, 'Plane %d' % i, airport))
+        stats.addArrivals()
 
+stats = Statistics(SIM_TIME)
 
 # Setup and start the simulation
 print('Airport')
@@ -93,3 +105,5 @@ env.process(setup(env, NUM_GATES, WAIT_TIME, T_INTER))
 
 # Execute!
 env.run(until=SIM_TIME)
+
+stats.printStats()
