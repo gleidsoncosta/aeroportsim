@@ -23,8 +23,26 @@ class Statistics(object):
     def addBusyTime(self, t):
         self.busy_time += t
 
+    def arrivalRate(self):
+        return self.arrivals_num/self.observation_time
+
+    def throughput(self):
+        return self.completions_num/self.observation_time
+
+    def usage(self):
+        return self.busy_time/self.observation_time
+
+    def avgServiceTime(self):
+        return self.busy_time/self.completions_num
+
+
     def printStats(self):
         print("Tempo de Observacao %d" % (self.observation_time))
         print("Numero de Chegadas %d" % self.arrivals_num)
         print("Numero de Saidas %d " % self.completions_num)
         print("Tempo ocupado %.2f" % self.busy_time)
+
+        print("Taxa de chegada: %.2f" % self.arrivalRate())
+        print("Taxa de saida: %.2f" % self.throughput())
+        print("Utilizacao: %.2f" % self.usage())
+        print("Tempo Medio Servico: %.2f" % self.avgServiceTime())

@@ -6,7 +6,7 @@ import datetime
 RANDOM_SEED = datetime.datetime.time(datetime.datetime.now())
 NUM_GATES = 2  # Number of machines in the carwash
 WAIT_TIME = 5      # Minutes it takes to clean a car
-T_INTER = 13       # Create a car every ~7 minutes
+T_INTER = 7       # Create a car every ~7 minutes
 SIM_TIME = 200    # Simulation time in minutes
 
 usage = False
