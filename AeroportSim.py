@@ -18,9 +18,9 @@ Scenario:
 import random
 from Statistics import Statistics
 import simpy
+import datetime
 
-
-RANDOM_SEED = 42
+RANDOM_SEED = datetime.datetime.time(datetime.datetime.now())
 NUM_GATES = 2  # Number of machines in the carwash
 WAIT_TIME = 5      # Minutes it takes to clean a car
 T_INTER = 7       # Create a car every ~7 minutes
@@ -96,6 +96,7 @@ def setup(env, num_gates, wait_time, t_inter):
 stats = Statistics(SIM_TIME)
 
 # Setup and start the simulation
+print("Random seed", RANDOM_SEED)
 print('Airport')
 random.seed(RANDOM_SEED)  # This helps reproducing the results
 
