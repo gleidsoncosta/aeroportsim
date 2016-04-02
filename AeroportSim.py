@@ -1,13 +1,14 @@
 import random
 from Statistics import Statistics
 import simpy
+import datetime
 
 
-RANDOM_SEED = 42
-NUM_GATES = 2
-WAIT_TIME = 5
+RANDOM_SEED = datetime.datetime.time(datetime.datetime.now())
+NUM_GATES = 10
+WAIT_TIME = 0
 T_INTER = 7
-SIM_TIME = 200
+SIM_TIME = 1440
 
 usage = False
 
@@ -20,19 +21,19 @@ class Airport(object):
         self.open = False
 
     def leave(self, plane):
-        yield self.env.timeout(WAIT_TIME)
-        #print("Airport authorizes %s to leave at %d" % (plane, env.now))
+        yield self.env.timeout(random.randrange(20,30))
+        print("Airport authorizes %s to leave at %d" % (plane, env.now))
 
 
 def plane(env, name, ap):
     #print("tempo sem locacao: u%d   nu%d    t%d" % (usage_res, non_usage_res, env.now))
 
-    #print('%s arrives at the airport at %.2f.' % (name, env.now))
+    print('%s arrives at the airport at %.2f.' % (name, env.now))
     with ap.num_gates.request() as request:
         yield request
 
         #arrival_time = env.now
-        #print('%s enters the gate at %.2f.' % (name, arrival_time))
+        print('%s enters the gate at %.2f.' % (name, env.now))
         yield env.process(ap.leave(name))
         stats.addCompletions()
 
@@ -42,7 +43,7 @@ def plane(env, name, ap):
             ap.open = False
 
         #depart_time = env.now
-        #print('%s leaves the gate at %.2f.' % (name, depart_time))
+        print('%s leaves the gate at %.2f.' % (name, env.now))
 
 
 def setup(env, num_gates, wait_time, t_inter):
@@ -65,7 +66,8 @@ def setup(env, num_gates, wait_time, t_inter):
 
 stats = Statistics(SIM_TIME)
 
-#print('Airport')
+stats.setNumRecursos(NUM_GATES)
+
 random.seed(RANDOM_SEED)
 
 env = simpy.Environment()
