@@ -55,5 +55,48 @@ class Statistics(object):
         print("Taxa de chegada: ..........%.2f" % self.arrivalRate())
         print("Taxa de saida:   ..........%.2f" % self.throughput())
         print("Utilizacao:  ..............%.2f%%" % (self.usage()*100))
-        #print("Tempo Medio Servico: ......%.2f" % self.avgServiceTime())
+       # print("Tempo Medio Servico: ......%.2f" % self.avgServiceTime())
 
+
+class StatisticsRouter(object):
+    numHttpRequests = 0
+    numPackagesCreated = 0
+    timePackagesCreated = 0
+    timePackagesSend = 0
+    busyTime = 0
+
+    def creatingPackages(self, numPackages, time):
+        self.numPackagesCreated = numPackages
+        self.timePackagesCreated = time
+        self.numHttpRequests += 1
+
+    def sendPackages(self, time):
+        self.timePackagesSend = time
+        self.busyTime = self.timePackagesSend - self.timePackagesCreated
+
+class StatisticsLinkSai(object):
+    numPackagesRecived = 0
+    timePackageRecived = 0
+    timePackageSend = 0
+    busyTime = 0
+
+    def recivePackage(self, time):
+        self.numPackagesRecived += 1
+        self.timePackageRecived = time
+
+    def sendPackage(self, time):
+        self.timePackageSend = time
+        self.busyTime = self.timePackageSend - self.timePackageRecived
+
+class StatisticsLinkEn(object):
+    numRequestRecived = 0
+    timeRequestRecived = 0
+    timeDocSend = 0
+    budyTime = 0
+    def reciveRequest(self, time):
+        self.numRequestRecived += 1
+        self.timeRequestRecived = time
+
+    def sendDoc(self, time):
+        self.timeDocSend = time
+        self.budyTime += self.timeDocSend - self.timeRequestRecived

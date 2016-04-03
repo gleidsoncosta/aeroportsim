@@ -1,10 +1,13 @@
-import datetime
-import random
-
 import simpy
-from Statistics import Statistics
+import random
+import datetime
+import time
+from Statistics import StatisticsRouter
+from Statistics import StatisticsLinkSai
+from Statistics import StatisticsLinkEn
 
-Seed = datetime.datetime.time(datetime.datetime.now())
+
+Seed = time.time()
 
 LargBandaLan = 10                                       #largura da banda LAN em mgbits
 OvhdFrame = 18                                          #numero de bytes no inicio de um pacote
@@ -36,6 +39,10 @@ Req_list = []
 Doc_list = []
 
 SIM_TIME = 20
+
+EstatisticasLinkSai = StatisticsLinkSai
+EstatisticasLinkEn = StatisticsLinkEn
+EstatisticasRouter = StatisticsRouter
 
 class Pct(object):
     def __init__(self, requisicaoID, partePCT, numPartsTotal, sizePct):
@@ -140,7 +147,7 @@ class Router (object):
         #tamPac = sizeDoc*1024
         #e ver quantos pacotes essa requisição requer
         num_pacs = int(sizeDoc/(self.mss - self.ovh_frame)) + 1
-
+        EstatisticasRouter.creatingPackages(num_pacs, env.now)
         #para cada pacote, é esperado um tempo de latencia
         #e depois é enviado e passado para outro pacote
         #ate o envio de todos
@@ -149,6 +156,7 @@ class Router (object):
             yield self.env.timeout((self.mss/1024)/(self.largura_banda_link))
             Pct_list.append(Pct(requisicaoID, i, num_pacs-1, self.mss+self.ovh_frame))
             print('Requisição: %s Pacote: %s saiu do roteador: %.2f' % (requisicaoID, i, env.now))
+            EstatisticasRouter.sendPackages(env.now)
 
     def makeAPctServerNav(self, requisicaoID, sizeDoc):
         #calcular quantos datagramas esta requisicao esta consumindo
@@ -158,6 +166,7 @@ class Router (object):
         tamPac = sizeDoc*1024
         #e ver quantos pacotes essa requisição requer
         num_pacs = int(tamPac/(self.mss - self.ovh_frame)) + 1
+        EstatisticasRouter.creatingPackages(num_pacs, env.now)
         print("size documento: %s num packs: %s" % (sizeDoc, num_pacs))
 
         #para cada pacote, é esperado um tempo de latencia
@@ -169,6 +178,7 @@ class Router (object):
             #Pct_list.append(Pct(requisicaoID, i, num_pacs-1, self.mss+self.ovh_frame))
             print("num pack: %s, num packs: %s" % (i, num_pacs-1))
             print('Requisição: %s Pacote: %s saiu do roteador: %.2f' % (requisicaoID, i, env.now))
+            EstatisticasRouter.sendPackages(env.now)
 
 def requests (env, router, requestID, sizeDoc, navServ):
     if navServ:
@@ -185,23 +195,28 @@ def requests (env, router, requestID, sizeDoc, navServ):
             yield env.process(router.makeAPctServerNav(requestID, sizeDoc))
         print('Requisição Cliente ID: %s foi atendida no tempo: %.2f' %(requestID, env.now))
 
+
 def requestLinkSai(env, linksai, pacote):
     print('Pacote LinkSai ID: %s chegou com tempo: %.2f' % (pacote.requisicaoID, env.now))
+    EstatisticasLinkSai.recivePackage(env.now)
     with linksai.conexao.request() as request:
         yield request
 
         #ficara nisso ate todos os pacotes serem enviados
         yield env.process(linksai.takePct(pacote))
+        EstatisticasLinkSai.sendPackage(env.now)
         print('Requisição LinkSai ID: %s foi atendida no tempo: %.2f' %(pacote.requisicaoID, env.now))
 
 
 def requestLinkEn(env, linken, req):
     print('Pacote LinkEn ID : %s chegou com tempo: %.2f' % (req.requisicaoID, env.now))
+    EstatisticasLinkEn.reciveRequest (env.now)
     with linken.conexao.request() as request:
         yield request
 
         #ficara nisso ate todos os pacotes serem enviados
         yield env.process(linken.makeDoc(req))
+        EstatisticasLinkEn.sendDoc(env.now)
         print('Requisição LinkEn ID: %s foi atendida no tempo: %.2f' %(req.requisicaoID, env.now))
 
 def setup (env):
@@ -240,9 +255,14 @@ def setup (env):
             #ficara nisso ate todos os pacotes serem enviados
             env.process(requests(env, router, doc.requisicaoID, doc.size, False))
 
-stats = Statistics(134)
+
+
+
 env = simpy.Environment()
 env.process(setup(env))
 
 env.run(until=SIM_TIME)
-stats.printStats("Airport")
+
+print("***************** Estatisticas *****************")
+print("********* Roteador *********")
+#print('Numero de Pacotes Enviados: %s' % EstatisticasRouter.numPackagesCreated)
