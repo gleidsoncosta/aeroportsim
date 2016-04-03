@@ -1,6 +1,7 @@
-import simpy
-import random
 import datetime
+import random
+
+import simpy
 from Statistics import Statistics
 
 Seed = datetime.datetime.time(datetime.datetime.now())
@@ -239,8 +240,9 @@ def setup (env):
             #ficara nisso ate todos os pacotes serem enviados
             env.process(requests(env, router, doc.requisicaoID, doc.size, False))
 
-
+stats = Statistics(134)
 env = simpy.Environment()
 env.process(setup(env))
 
 env.run(until=SIM_TIME)
+stats.printStats("Airport")

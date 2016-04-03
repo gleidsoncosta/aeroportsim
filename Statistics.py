@@ -55,5 +55,5 @@ class Statistics(object):
         print("Taxa de chegada: ..........%.2f" % self.arrivalRate())
         print("Taxa de saida:   ..........%.2f" % self.throughput())
         print("Utilizacao:  ..............%.2f%%" % (self.usage()*100))
-        print("Tempo Medio Servico: ......%.2f" % self.avgServiceTime())
+        #print("Tempo Medio Servico: ......%.2f" % self.avgServiceTime())
 

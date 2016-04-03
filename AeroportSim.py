@@ -1,8 +1,8 @@
-import random
-from Statistics import Statistics
-import simpy
 import datetime
+import random
 
+import simpy
+from Statistics import Statistics
 
 RANDOM_SEED = datetime.datetime.time(datetime.datetime.now())
 NUM_GATES = 10
