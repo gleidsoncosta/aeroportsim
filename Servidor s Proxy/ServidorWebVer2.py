@@ -3,6 +3,7 @@ import random
 import datetime
 
 Seed = datetime.datetime.time(datetime.datetime.now())
+
 LargBandaLan = 10                                       #largura da banda LAN em mgbits
 OvhdFrame = 18                                          #numero de bytes no inicio de um pacote
 MSS = 1460                                              #bytes tamanho maximo de um pacote
@@ -30,6 +31,13 @@ RequestID = 0
 
 SIM_TIME = 20
 
+class Pct(object):
+    def __init__(self, requisicaoID, partePCT, numPartsTotal, sizePct):
+        self.requisicaoID = requisicaoID
+        self.partePCT = partePCT
+        self.numPartsTotal = numPartsTotal
+        self.sizePct = sizePct
+
 class Router (object):
     def __init__(self, env, numMicros, taxa_browser, latencia_rout, mss, ovh_frame):
         self.env = env
@@ -51,7 +59,24 @@ class Router (object):
         #botei inicial somente 1
         self.conexao = simpy.Resource(env, 1)
 
-    def makeAPct(self, requisicaoID, sizeDoc):
+    def makeAPctNavServer(self, requisicaoID, sizeDoc):
+        #calcular quantos datagramas esta requisicao esta consumindo
+        #inicialmente 1 requisicao = datagrama
+
+        #converte de kb para byte
+        #tamPac = sizeDoc*1024
+        #e ver quantos pacotes essa requisição requer
+        num_pacs = int(sizeDoc/(self.mss - self.ovh_frame)) + 1
+        print("size documento: %s num packs: %s" % (sizeDoc, num_pacs))
+
+        #para cada pacote, é esperado um tempo de latencia
+        #e depois é enviado e passado para outro pacote
+        #ate o envio de todos
+        for i in range(0, num_pacs):
+            yield self.env.timeout(self.latencia_rout)
+            print('Requisição: %s Pacote: %s saiu do roteador: %.2f' % (requisicaoID, i, env.now))
+
+    def makeAPctServerNav(self, requisicaoID, sizeDoc):
         #calcular quantos datagramas esta requisicao esta consumindo
         #inicialmente 1 requisicao = datagrama
 
@@ -76,6 +101,8 @@ def requests (env, router, requestID, sizeDoc):
         #ficara nisso ate todos os pacotes serem enviados
         yield env.process(router.makeAPct(requestID, sizeDoc))
 
+
+
         #arrivalTime = env.now
         print('Requisição: %s foi atendida no tempo: %.2f' %(requestID, env.now))
         #yield env.process(webService.reply())
@@ -89,12 +116,12 @@ def setup (env):
     RequestID = 0
     for i in range(4):
         #cria um processo no roteador
-        env.process(requests(env, router, RequestID, random.choice(TamanhoDocs)))
+        env.process(requests(env, router, RequestID, PedidoHTTPMedio))
         RequestID = RequestID + 1
 
     while True:
-        yield env.timeout(TaxaBrowser)
-        env.process(requests(env, router, RequestID, random.choice(TamanhoDocs)))
+        yield env.timeout(TaxaBrowser / NumMicrosActive)
+        env.process(requests(env, router, RequestID, PedidoHTTPMedio))
         RequestID = RequestID + 1
 
 
