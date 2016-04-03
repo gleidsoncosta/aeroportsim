@@ -29,6 +29,8 @@ FrequenciaDocs = [35, 50, 14, 1]                        # %
 
 RequestID = 0
 
+Pct_list = []
+
 SIM_TIME = 20
 
 class Pct(object):
@@ -37,6 +39,23 @@ class Pct(object):
         self.partePCT = partePCT
         self.numPartsTotal = numPartsTotal
         self.sizePct = sizePct
+
+class LinkSai(object):
+    def __init__(self, env, rttAtrasoNet, taxaDadosNet):
+        self.env = env
+        self.rttAtrasoNet = rttAtrasoNet
+        self.taxaDadosNet = taxaDadosNet
+        self.conexao = simpy.Resource(env, 1)
+
+    def takePct(self, pacote):
+        time_to_pass = int(pacote.sizePct/self.taxaDadosNet) + 1
+
+        for i in range(0, time_to_pass):
+            yield self.env.timeout(self.rttAtrasoNet)
+            print('Requisição: %s Pacote: %s tamPct: %s saiu do roteador: %.2f' %
+                  (pacote.requisicaoID, pacote.partePCT, pacote.sizePct, env.now))
+
+
 
 class Router (object):
     def __init__(self, env, numMicros, taxa_browser, latencia_rout, mss, ovh_frame):
@@ -74,6 +93,7 @@ class Router (object):
         #ate o envio de todos
         for i in range(0, num_pacs):
             yield self.env.timeout(self.latencia_rout)
+            Pct_list.append(Pct(requisicaoID, i, num_pacs, self.mss+self.ovh_frame))
             print('Requisição: %s Pacote: %s saiu do roteador: %.2f' % (requisicaoID, i, env.now))
 
     def makeAPctServerNav(self, requisicaoID, sizeDoc):
@@ -91,6 +111,7 @@ class Router (object):
         #ate o envio de todos
         for i in range(0, num_pacs):
             yield self.env.timeout(self.latencia_rout)
+            Pct_list.append(Pct(requisicaoID, i, num_pacs, self.mss+self.ovh_frame))
             print('Requisição: %s Pacote: %s saiu do roteador: %.2f' % (requisicaoID, i, env.now))
 
 def requests (env, router, requestID, sizeDoc):
@@ -99,18 +120,21 @@ def requests (env, router, requestID, sizeDoc):
         yield request
 
         #ficara nisso ate todos os pacotes serem enviados
-        yield env.process(router.makeAPct(requestID, sizeDoc))
-
-
-
-        #arrivalTime = env.now
+        yield env.process(router.makeAPctNavServer(requestID, sizeDoc))
         print('Requisição: %s foi atendida no tempo: %.2f' %(requestID, env.now))
-        #yield env.process(webService.reply())
+
+def requestLinkSai(env, linksai, pacote):
+    with linksai.conexao.request() as request:
+        yield request
+
+            #ficara nisso ate todos os pacotes serem enviados
+        yield env.process(linksai.takePct(pacote))
+            #print('Requisição: %s foi atendida no tempo: %.2f' %(requestID, env.now))
 
 def setup (env):
     #Criando o Roteador
     router = Router(env, NumMicrosActive, TaxaBrowser, RouterLatencia, MSS, OvhdFrame)
-
+    linkSai = LinkSai(env, RttAtrasoNet, TaxaDadosNet)
 
     #primeiro id de requisição
     RequestID = 0
@@ -124,6 +148,11 @@ def setup (env):
         env.process(requests(env, router, RequestID, PedidoHTTPMedio))
         RequestID = RequestID + 1
 
+        if len(Pct_list) > 0:
+            pacote = Pct_list.pop(0)
+
+            #ficara nisso ate todos os pacotes serem enviados
+            env.process(requestLinkSai(env, linkSai, pacote))
 
 
 env = simpy.Environment()
