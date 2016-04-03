@@ -17,8 +17,8 @@ TaxaDadosNet = 2.5                                      # 20Kbps == 2.5 Kbyte/s
 TaxaBrowser = 0.3                                       #num pedidos por segundo
 
 NumMicros = 150                                         #num micros na rede
-PorcMicrosUsage = 0.1                                    #porcentagem de micros ativos
-NumMicrosActive = (NumMicros/100) * PorcMicrosUsage     #num micros ativos na rede
+PorcMicrosUsage = 10/100                                #porcentagem de micros ativos
+NumMicrosActive = NumMicros * PorcMicrosUsage           #num micros ativos na rede
 
 PedidoHTTPMedio = 290                                   #bytes, tamanho medio da requisicao http para servidor
 
@@ -86,7 +86,7 @@ class LinkSai(object):
                 time_to_pass = int((req.size/1024)/self.taxaDadosNet) + 1
                 for i in range(0, time_to_pass):
                     yield self.env.timeout(self.rttAtrasoNet)
-                    print('Requisição: %s tamreq: %s saiu do roteador: %.2f' %
+                    print('Requisição: %s tamreq: %s saiu do Link Saida: %.2f' %
                           (req.requisicaoID, req.size, env.now))
                 Req_list.append(req)
 
@@ -101,9 +101,8 @@ class LinkEn(object):
         doc_size = random.choice(TamanhoDocs)
 
         time_to_pass = int((doc_size/1024)/self.taxaDadosNet) + 1
-        for i in range(0, time_to_pass):
-            yield self.env.timeout(self.rttAtrasoNet)
-            print('Requisição: %s doc size: %s saiu do roteador: %.2f' %
+        yield self.env.timeout(self.rttAtrasoNet * time_to_pass)
+        print('Requisição: %s doc size: %s saiu para o roteador: %.2f' %
                   (req.requisicaoID, doc_size, env.now))
         Doc_list.append(Doc(req.requisicaoID, doc_size))
 
@@ -140,7 +139,6 @@ class Router (object):
         #tamPac = sizeDoc*1024
         #e ver quantos pacotes essa requisição requer
         num_pacs = int(sizeDoc/(self.mss - self.ovh_frame)) + 1
-        print("size documento: %s num packs: %s" % (sizeDoc, num_pacs))
 
         #para cada pacote, é esperado um tempo de latencia
         #e depois é enviado e passado para outro pacote
@@ -149,7 +147,6 @@ class Router (object):
             yield self.env.timeout(self.latencia_rout)
             yield self.env.timeout((self.mss/1024)/(self.largura_banda_link))
             Pct_list.append(Pct(requisicaoID, i, num_pacs-1, self.mss+self.ovh_frame))
-            print("num pack: %s, num packs: %s" % (i, num_pacs-1))
             print('Requisição: %s Pacote: %s saiu do roteador: %.2f' % (requisicaoID, i, env.now))
 
     def makeAPctServerNav(self, requisicaoID, sizeDoc):
@@ -168,34 +165,43 @@ class Router (object):
         for i in range(0, num_pacs):
             yield self.env.timeout(self.latencia_rout)
             yield self.env.timeout((self.mss/1024)/(self.largura_banda_link))
-            Pct_list.append(Pct(requisicaoID, i, num_pacs-1, self.mss+self.ovh_frame))
+            #Pct_list.append(Pct(requisicaoID, i, num_pacs-1, self.mss+self.ovh_frame))
             print("num pack: %s, num packs: %s" % (i, num_pacs-1))
             print('Requisição: %s Pacote: %s saiu do roteador: %.2f' % (requisicaoID, i, env.now))
 
-def requests (env, router, requestID, sizeDoc):
-    print('Requisição: %s chegou com tempo: %.2f' % (requestID, env.now))
+def requests (env, router, requestID, sizeDoc, navServ):
+    if navServ:
+        print('Requisição Cliente ID NavServ: %s chegou com tempo: %.2f' % (requestID, env.now))
+    else:
+        print('Requisição Cliente ID ServNav: %s chegou com tempo: %.2f' % (requestID, env.now))
     with router.conexao.request() as request:
         yield request
 
         #ficara nisso ate todos os pacotes serem enviados
-        yield env.process(router.makeAPctNavServer(requestID, sizeDoc))
-        print('Requisição: %s foi atendida no tempo: %.2f' %(requestID, env.now))
+        if navServ:
+            yield env.process(router.makeAPctNavServer(requestID, sizeDoc))
+        else:
+            yield env.process(router.makeAPctServerNav(requestID, sizeDoc))
+        print('Requisição Cliente ID: %s foi atendida no tempo: %.2f' %(requestID, env.now))
 
 def requestLinkSai(env, linksai, pacote):
-
+    print('Pacote LinkSai ID: %s chegou com tempo: %.2f' % (pacote.requisicaoID, env.now))
     with linksai.conexao.request() as request:
         yield request
 
         #ficara nisso ate todos os pacotes serem enviados
         yield env.process(linksai.takePct(pacote))
+        print('Requisição LinkSai ID: %s foi atendida no tempo: %.2f' %(pacote.requisicaoID, env.now))
+
 
 def requestLinkEn(env, linken, req):
-
+    print('Pacote LinkEn ID : %s chegou com tempo: %.2f' % (req.requisicaoID, env.now))
     with linken.conexao.request() as request:
         yield request
 
         #ficara nisso ate todos os pacotes serem enviados
         yield env.process(linken.makeDoc(req))
+        print('Requisição LinkEn ID: %s foi atendida no tempo: %.2f' %(req.requisicaoID, env.now))
 
 def setup (env):
     #Criando o Roteador
@@ -205,14 +211,14 @@ def setup (env):
 
     #primeiro id de requisição
     RequestID = 0
-    for i in range(4):
-        #cria um processo no roteador
-        env.process(requests(env, router, RequestID, PedidoHTTPMedio))
-        RequestID = RequestID + 1
+    #for i in range(4):
+    #    #cria um processo no roteador
+    #    env.process(requests(env, router, RequestID, PedidoHTTPMedio))
+    #    RequestID = RequestID + 1
 
     while True:
         yield env.timeout(TaxaBrowser / NumMicrosActive)
-        env.process(requests(env, router, RequestID, PedidoHTTPMedio))
+        env.process(requests(env, router, RequestID, PedidoHTTPMedio, True))
         RequestID = RequestID + 1
 
         if len(Pct_list) > 0:
@@ -231,7 +237,7 @@ def setup (env):
             doc = Doc_list.pop(0)
 
             #ficara nisso ate todos os pacotes serem enviados
-            env.process(requests(env, router, doc.requisicaoID, doc.size))
+            env.process(requests(env, router, doc.requisicaoID, doc.size, False))
 
 
 env = simpy.Environment()
