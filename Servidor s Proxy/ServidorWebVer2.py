@@ -1,6 +1,7 @@
 import simpy
 import random
 import datetime
+from Statistics import Statistics
 
 Seed = datetime.datetime.time(datetime.datetime.now())
 
@@ -30,6 +31,8 @@ FrequenciaDocs = [35, 50, 14, 1]                        # %
 RequestID = 0
 
 Pct_list = []
+Req_list = []
+Doc_list = []
 
 SIM_TIME = 20
 
@@ -45,6 +48,11 @@ class Requisicao(object):
         self.requisicaoID = requisicaoID
         self.size = size
         self.complete = complete
+
+class Doc(object):
+    def __init__(self, requisicaoID, size):
+        self.requisicaoID = requisicaoID
+        self.size = size
 
 class LinkSai(object):
     def __init__(self, env, rttAtrasoNet, taxaDadosNet):
@@ -75,11 +83,31 @@ class LinkSai(object):
         for req in self.req_list:
             print(req.complete)
             if req.complete:
-                time_to_pass = int(req.size/self.taxaDadosNet) + 1
+                time_to_pass = int((req.size/1024)/self.taxaDadosNet) + 1
                 for i in range(0, time_to_pass):
                     yield self.env.timeout(self.rttAtrasoNet)
                     print('Requisição: %s tamreq: %s saiu do roteador: %.2f' %
                           (req.requisicaoID, req.size, env.now))
+                Req_list.append(req)
+
+class LinkEn(object):
+    def __init__(self, env, rttAtrasoNet, taxaDadosNet):
+        self.env = env
+        self.rttAtrasoNet = rttAtrasoNet
+        self.taxaDadosNet = taxaDadosNet
+        self.conexao = simpy.Resource(env, 1)
+
+    def makeDoc(self, req):
+        doc_size = random.choice(TamanhoDocs)
+
+        time_to_pass = int((doc_size/1024)/self.taxaDadosNet) + 1
+        for i in range(0, time_to_pass):
+            yield self.env.timeout(self.rttAtrasoNet)
+            print('Requisição: %s doc size: %s saiu do roteador: %.2f' %
+                  (req.requisicaoID, doc_size, env.now))
+        Doc_list.append(Doc(req.requisicaoID, doc_size))
+
+
 
 class Router (object):
     def __init__(self, env, numMicros, taxa_browser, latencia_rout, mss, ovh_frame, largura_banda_link):
@@ -161,10 +189,19 @@ def requestLinkSai(env, linksai, pacote):
         #ficara nisso ate todos os pacotes serem enviados
         yield env.process(linksai.takePct(pacote))
 
+def requestLinkEn(env, linken, req):
+
+    with linken.conexao.request() as request:
+        yield request
+
+        #ficara nisso ate todos os pacotes serem enviados
+        yield env.process(linken.makeDoc(req))
+
 def setup (env):
     #Criando o Roteador
     router = Router(env, NumMicrosActive, TaxaBrowser, RouterLatencia, MSS, OvhdFrame, LargBandaLink)
     linkSai = LinkSai(env, RttAtrasoNet, TaxaDadosNet)
+    linkEn = LinkEn(env, RttAtrasoNet, TaxaDadosNet)
 
     #primeiro id de requisição
     RequestID = 0
@@ -183,6 +220,18 @@ def setup (env):
 
             #ficara nisso ate todos os pacotes serem enviados
             env.process(requestLinkSai(env, linkSai, pacote))
+
+        if len(Req_list) > 0:
+            req = Req_list.pop(0)
+
+            #ficara nisso ate todos os pacotes serem enviados
+            env.process(requestLinkEn(env, linkEn, req))
+
+        if len(Doc_list) > 0:
+            doc = Doc_list.pop(0)
+
+            #ficara nisso ate todos os pacotes serem enviados
+            env.process(requests(env, router, doc.requisicaoID, doc.size))
 
 
 env = simpy.Environment()
