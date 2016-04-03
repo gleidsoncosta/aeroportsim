@@ -1,8 +1,14 @@
 import simpy
 import random
 import datetime
+import time
+from Statistics import StatisticsRouter
+from Statistics import StatisticsLinkSai
+from Statistics import StatisticsLinkEn
 
-Seed = datetime.datetime.time(datetime.datetime.now())
+
+Seed = time.time()
+
 NumMicros = 15
 Latencia = 0.00005  # 50 μs == 0.00005s
 Conexao = 7  # 56Kbps == 7 Kbyte/s
@@ -63,6 +69,7 @@ def setup (env):
         env.process(requests(env, router, i, webService))
 
         print(router.conexao.count)
+
 
 
 env = simpy.Environment()
