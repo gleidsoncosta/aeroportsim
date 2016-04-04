@@ -15,8 +15,8 @@ MSS = 1460                                              #bytes tamanho maximo de
 RouterLatencia = 0.00005                                #Tempo latencia entre pacotes 50 μs/pct == 0.00005s/pct
 
 LargBandaLink = 7                                       # 56Kbps == 7 Kbyte/s
-RttAtrasoNet = 0.1                                      # 100 ms = 0.1 s
-TaxaDadosNet = 2.5                                      # 20Kbps == 2.5 Kbyte/s
+RttAtrasoNet = 0.05                                      # 100 ms = 0.1 s
+TaxaDadosNet = 7                                      # 20Kbps == 2.5 Kbyte/s
 
 TaxaBrowser = 0.3                                       #num pedidos por segundo
 
@@ -28,8 +28,8 @@ PedidoHTTPMedio = 290                                   #bytes, tamanho medio da
 
 TamanhoMedioDocs = 22.23                                #kb
 
-TamanhoDocs = [0.8, 5.5, 80, 800]                       # KByte
-#TamanhoDocs = [22.23, 22.23, 22.23, 22.23]
+#TamanhoDocs = [0.8, 5.5, 80, 800]                       # KByte
+TamanhoDocs = [22,23]
 FrequenciaDocs = [35, 50, 14, 1]                        # %
 
 
