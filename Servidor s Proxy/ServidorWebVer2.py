@@ -28,7 +28,8 @@ PedidoHTTPMedio = 290                                   #bytes, tamanho medio da
 
 TamanhoMedioDocs = 22.23                                #kb
 
-TamanhoDocs = [0.8, 5.5, 80, 800]                       # KByte
+#TamanhoDocs = [0.8, 5.5, 80, 800]                       # KByte
+TamanhoDocs = [80, 80, 80, 80]
 FrequenciaDocs = [35, 50, 14, 1]                        # %
 
 

@@ -156,7 +156,7 @@ class StatisticsLinkEn(object):
         self.numDocSend += 1
 
     def printData(self):
-        print("********* Link Saída *********")
+        print("********* Link Entrada *********")
         print("Número de pacotes Recebidos: %s" % self.numRequestRecived)
         print("Tempo ocupado: %s" % self.busyTime)
         print("Taxa de entrada: %s" % (self.numRequestRecived / self.busyTime))
