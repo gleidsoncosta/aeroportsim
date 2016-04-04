@@ -29,7 +29,7 @@ PedidoHTTPMedio = 290                                   #bytes, tamanho medio da
 TamanhoMedioDocs = 22.23                                #kb
 
 TamanhoDocs = [0.8, 5.5, 80, 800]                       # KByte
-#TamanhoDocs = [800, 800, 800, 800]
+#TamanhoDocs = [22.23, 22.23, 22.23, 22.23]
 FrequenciaDocs = [35, 50, 14, 1]                        # %
 
 
@@ -277,7 +277,6 @@ print("******************** Sistema ********************")
 print("Número de pacotes Recebidos: %s" % EstatisticasRouter.numPackagesCreated)
 print("Tempo ocupado: %s" % (EstatisticasLinkEn.endObser - EstatisticasRouter.startObserv))
 print("Taxa de entrada: %s" % (EstatisticasRouter.numPackagesCreated / (EstatisticasLinkEn.endObser - EstatisticasRouter.startObserv)))
-print("Taxa de saída: %s" % (EstatisticasLinkSai.numRequestFile / (EstatisticasLinkEn.endObser - EstatisticasRouter.startObserv)))
 print("Throughput: %s" % (EstatisticasRouter.numPackagesCreated / (EstatisticasLinkEn.endObser - EstatisticasRouter.startObserv)))
 print("StartObserver: %s ------ EndObserver: %s" % (EstatisticasRouter.startObserv, EstatisticasLinkEn.endObser))
 #print("Utilização: %.2f%%" % (((EstatisticasLinkEn.endObser - EstatisticasRouter.startObserv) / (EstatisticasLinkEn.endObser - EstatisticasRouter.startObserv)) * 100))

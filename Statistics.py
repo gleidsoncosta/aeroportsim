@@ -89,7 +89,6 @@ class StatisticsRouter(object):
         print("Número de Pacotes Criados: %s" % self.numPackagesCreated)
         print("Tempo ocupado: %s" % self.busyTime)
         print("Taxa de entrada: %s" % (self.numHttpRequests / self.busyTime))
-        print("Taxa de saida: %s" % (self.numPackagesCreated / self.busyTime))
         print("Throughput: %s" % (self.numPackagesCreated / self.busyTime))
         print(
             "StartObserver: %s ------ EndObserver: %s" % (self.startObserv, self.endObser))
@@ -125,7 +124,6 @@ class StatisticsLinkSai(object):
         print("Número de pacotes Recebidos: %s" % self.numPackagesRecived)
         print("Tempo ocupado: %s" % self.busyTime)
         print("Taxa de entrada: %s" % (self.numPackagesRecived / self.busyTime))
-        print("Taxa de saída: %s" % (self.numPackagesRecived / self.busyTime))
         print("Throughput: %s" % (self.numRequestFile / self.busyTime))
         print("StartObserver: %s ------ EndObserver: %s" % (self.startObserv, self.endObser))
         print("Utilização: %.2f%%" % ((self.busyTime / (self.endObser - self.startObserv)) * 100))
@@ -160,7 +158,6 @@ class StatisticsLinkEn(object):
         print("Número de pacotes Recebidos: %s" % self.numRequestRecived)
         print("Tempo ocupado: %s" % self.busyTime)
         print("Taxa de entrada: %s" % (self.numRequestRecived / self.busyTime))
-        print("Taxa de saída: %s" % (self.numDocSend / self.busyTime))
         print("Throughput: %s" % (self.numRequestRecived / self.busyTime))
         print("StartObserver: %s ------ EndObserver: %s" % (self.startObserv, self.endObser))
         print("Utilização: %.2f%%" % ((self.busyTime / (self.endObser - self.startObserv)) * 100))
