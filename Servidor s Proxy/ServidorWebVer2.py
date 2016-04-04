@@ -7,7 +7,7 @@ from Statistics import StatisticsLinkSai
 from Statistics import StatisticsLinkEn
 
 
-Seed = time.time()
+Seed = datetime.datetime.time(datetime.datetime.now())
 
 LargBandaLan = 10                                       #largura da banda LAN em mgbits
 OvhdFrame = 18                                          #numero de bytes no inicio de um pacote
@@ -28,8 +28,8 @@ PedidoHTTPMedio = 290                                   #bytes, tamanho medio da
 
 TamanhoMedioDocs = 22.23                                #kb
 
-#TamanhoDocs = [0.8, 5.5, 80, 800]                       # KByte
-TamanhoDocs = [80, 80, 80, 80]
+TamanhoDocs = [0.8, 5.5, 80, 800]                       # KByte
+#TamanhoDocs = [800, 800, 800, 800]
 FrequenciaDocs = [35, 50, 14, 1]                        # %
 
 
@@ -272,3 +272,12 @@ env.run(until=SIM_TIME)
 EstatisticasRouter.printData(EstatisticasRouter)
 EstatisticasLinkSai.printData(EstatisticasLinkSai)
 EstatisticasLinkEn.printData(EstatisticasLinkEn)
+
+print("******************** Sistema ********************")
+print("Número de pacotes Recebidos: %s" % EstatisticasRouter.numPackagesCreated)
+print("Tempo ocupado: %s" % (EstatisticasLinkEn.endObser - EstatisticasRouter.startObserv))
+print("Taxa de entrada: %s" % (EstatisticasRouter.numPackagesCreated / (EstatisticasLinkEn.endObser - EstatisticasRouter.startObserv)))
+print("Taxa de saída: %s" % (EstatisticasLinkSai.numRequestFile / (EstatisticasLinkEn.endObser - EstatisticasRouter.startObserv)))
+print("Throughput: %s" % (EstatisticasRouter.numPackagesCreated / (EstatisticasLinkEn.endObser - EstatisticasRouter.startObserv)))
+print("StartObserver: %s ------ EndObserver: %s" % (EstatisticasRouter.startObserv, EstatisticasLinkEn.endObser))
+#print("Utilização: %.2f%%" % (((EstatisticasLinkEn.endObser - EstatisticasRouter.startObserv) / (EstatisticasLinkEn.endObser - EstatisticasRouter.startObserv)) * 100))
